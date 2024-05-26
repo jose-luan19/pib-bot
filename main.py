@@ -20,7 +20,7 @@ CEARA_TZ = pytz.timezone('America/Fortaleza')
 SCOPES = ["https://www.googleapis.com/auth/youtube.force-ssl"]
 
 # Horários de verificação em formato 24h
-check_times = ["08:32", "09:02", "15:00","17:02", "18:02", "19:32"]
+check_times = ["08:32", "09:02","17:02", "18:02", "19:32"]
 
 # Arquivo onde as credenciais serão armazenadas
 youtube = None
