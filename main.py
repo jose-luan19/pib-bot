@@ -7,6 +7,7 @@ import google.auth.transport.requests
 from datetime import datetime, timedelta
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
 
 # Definir a variável de ambiente SSL_CERT_FILE
 os.environ['SSL_CERT_FILE'] = certifi.where()
@@ -19,7 +20,7 @@ CEARA_TZ = pytz.timezone('America/Fortaleza')
 SCOPES = ["https://www.googleapis.com/auth/youtube.force-ssl"]
 
 # Horários de verificação em formato 24h
-check_times = ["08:32", "09:02", "17:02", "18:02", "19:32"]
+check_times = ["08:32", "09:02", "17:02", "18:02", "19:32", "15:00"]
 
 # Arquivo onde as credenciais serão armazenadas
 youtube = None
@@ -31,36 +32,44 @@ def authenticate():
     global youtube
     creds = None
 
-    if os.path.exists(TOKEN_FILE):
-        creds = Credentials.from_authorized_user_file(TOKEN_FILE, SCOPES)
+    try:
+        if os.path.exists(TOKEN_FILE):
+            creds = Credentials.from_authorized_user_file(TOKEN_FILE, SCOPES)
     
-    # Se não houver credenciais válidas, solicite ao usuário fazer login
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(google.auth.transport.requests.Request())
-
-    youtube = build("youtube", "v3", credentials=creds)
+        # Se não houver credenciais válidas, solicite ao usuário fazer login
+        if not creds or not creds.valid:
+            if creds and creds.expired and creds.refresh_token:
+                creds.refresh(google.auth.transport.requests.Request())
+                
+        youtube = build("youtube", "v3", credentials=creds)
+    except:
+        print("PROBLEMA AO RESGATAR AS CREDENCIAIS OU SE CONECTAR AO SERVICO DO YOUTUBE")
 
 
 
 # Função para obter a transmissão ao vivo atual
 def get_live_broadcast():
     authenticate()
-    request = youtube.liveBroadcasts().list(
-        part="snippet",
-        broadcastStatus="active",
-        broadcastType="all"
-    )
-    response = request.execute()
+    try:
+        request = youtube.liveBroadcasts().list(
+            part="snippet",
+            broadcastStatus="active",
+            broadcastType="all"
+        )
+        response = request.execute()
 
-    if "items" in response and len(response["items"]) > 0:
-        return response["items"][0]
-    else:
+        if "items" in response and len(response["items"]) > 0:
+            return response["items"][0]
+        else:
+            return None
+    except:
+        print("PROBLEMA AO RESGATAR STREAM")
         return None
 
 # Função para enviar uma mensagem no chat ao vivo
 def send_message(live_chat_id, message):
-    request = youtube.liveChatMessages().insert(
+    try:
+        request = youtube.liveChatMessages().insert(
         part="snippet",
         body={
             "snippet": {
@@ -68,11 +77,14 @@ def send_message(live_chat_id, message):
                 "type": "textMessageEvent",
                 "textMessageDetails": {
                     "messageText": message
+                    }
                 }
             }
-        }
-    )
-    request.execute()
+        )
+        request.execute()
+    except:
+        print("PROBLEMA AO ENVIAR MENSAGEM PARA YOUTBE")
+
 
 # Mensagem a ser enviada
 BOAS_VINDAS_DIA = "Bom Dia, sejam bem vindos."
@@ -121,9 +133,9 @@ def main():
     broadcast = None
     try:
         while True:
-            time_to_sleep = time_until_next_check()
-            print(f"Aguardando {time_to_sleep / 60:.2f} minutos ate a proxima verificaao.")
-            time.sleep(time_to_sleep)
+            # time_to_sleep = time_until_next_check()
+            # print(f"Aguardando {time_to_sleep / 60:.2f} minutos ate a proxima verificaao.")
+            # time.sleep(time_to_sleep)
 
             # Verificar se há uma transmissão ao vivo
             broadcast = get_live_broadcast()
