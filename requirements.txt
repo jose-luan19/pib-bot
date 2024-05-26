@@ -1,3 +1,4 @@
+altgraph==0.17.4
 cachetools==5.3.3
 certifi==2024.2.2
 charset-normalizer==3.3.2
@@ -10,6 +11,7 @@ google-api-core==2.19.0
 google-api-python-client==2.129.0
 google-auth==2.29.0
 google-auth-httplib2==0.2.0
+google-auth-oauthlib==1.2.0
 googleapis-common-protos==1.63.0
 grpcio==1.64.0
 grpcio-status==1.62.2
@@ -20,14 +22,18 @@ matplotlib==3.8.3
 numpy==1.26.4
 oauthlib==3.2.2
 packaging==24.0
+pefile==2023.2.7
 pillow==10.2.0
 proto-plus==1.23.0
 protobuf==4.25.3
 pyasn1==0.6.0
 pyasn1_modules==0.4.0
+pyinstaller==6.7.0
+pyinstaller-hooks-contrib==2024.6
 pyparsing==3.1.2
 python-dateutil==2.9.0.post0
 pytz==2024.1
+pywin32-ctypes==0.2.2
 requests==2.31.0
 requests-oauthlib==2.0.0
 rsa==4.9

@@ -1,11 +1,10 @@
 runtime: python39
 
-instance_class: F1  # Classe de instância gratuita
-
+instance_class: F1 
 entrypoint: python main.py
 
 env_variables:
-  GOOGLE_CLOUD_PROJECT: "thermal-cathode-330516"
+  GOOGLE_CLOUD_PROJECT: "bot-pib-engine"
 
 automatic_scaling:
   target_cpu_utilization: 0.5

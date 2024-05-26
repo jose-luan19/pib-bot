@@ -1,14 +1,16 @@
 import os
 import time
-import pickle
 import certifi
 import pytz
+import ssl
+import google.auth.transport.requests
 from datetime import datetime, timedelta
 from googleapiclient.discovery import build
-from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
 
 # Definir a variável de ambiente SSL_CERT_FILE
 os.environ['SSL_CERT_FILE'] = certifi.where()
+ssl._create_default_https_context = ssl.create_default_context(cafile=certifi.where())
 
 # Definindo o fuso horário do Brasil/Ceará
 CEARA_TZ = pytz.timezone('America/Fortaleza')
@@ -16,36 +18,34 @@ CEARA_TZ = pytz.timezone('America/Fortaleza')
 # Defina os escopos necessários CLIENT_SECRET
 SCOPES = ["https://www.googleapis.com/auth/youtube.force-ssl"]
 
+# Horários de verificação em formato 24h
+check_times = ["08:32", "09:02", "17:02", "18:02", "19:32"]
+
 # Arquivo onde as credenciais serão armazenadas
 youtube = None
 
-def authCredentials():
+# Caminho para armazenar o token de acesso
+TOKEN_FILE = 'token.json'
+
+def authenticate():
     global youtube
     creds = None
-    token_path = 'token.pickle'
 
-    # Se o token já existir, carregue-o
-    if os.path.exists(token_path):
-        with open(token_path, 'rb') as token:
-            creds = pickle.load(token)
-
-    # Se não houver credenciais válidas, faça o login
+    if os.path.exists(TOKEN_FILE):
+        creds = Credentials.from_authorized_user_file(TOKEN_FILE, SCOPES)
+    
+    # Se não houver credenciais válidas, solicite ao usuário fazer login
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            raise Exception("Credenciais inválidas ou expiradas e não podem ser renovadas.")
+            creds.refresh(google.auth.transport.requests.Request())
 
-    # Crie o serviço da API do YouTube
     youtube = build("youtube", "v3", credentials=creds)
 
-# Horários de verificação em formato 24h
-check_times = ["08:32", "09:02", "17:02", "18:02", "19:32"]
 
 
 # Função para obter a transmissão ao vivo atual
 def get_live_broadcast():
-    authCredentials()
+    authenticate()
     request = youtube.liveBroadcasts().list(
         part="snippet",
         broadcastStatus="active",
@@ -91,7 +91,7 @@ def time_until_next_check():
         next_check = future_checks[0]
     else:
         next_check = today_checks[0] + timedelta(days=1)
-    return (next_check - now).total_seconds() + 60
+    return (next_check - now).total_seconds()
 
 def prepare_for_send_message_at_time_exact(live_chat_id, message, time_to_wait):
     time.sleep(time_to_wait)
