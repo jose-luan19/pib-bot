@@ -133,9 +133,9 @@ def main():
     broadcast = None
     try:
         while True:
-            # time_to_sleep = time_until_next_check()
-            # print(f"Aguardando {time_to_sleep / 60:.2f} minutos ate a proxima verificaao.")
-            # time.sleep(time_to_sleep)
+            time_to_sleep = time_until_next_check()
+            print(f"Aguardando {time_to_sleep / 60:.2f} minutos ate a proxima verificaao.")
+            time.sleep(time_to_sleep)
 
             # Verificar se há uma transmissão ao vivo
             broadcast = get_live_broadcast()
