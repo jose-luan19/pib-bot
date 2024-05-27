@@ -4,10 +4,10 @@ import certifi
 import pytz
 import ssl
 import google.auth.transport.requests
-from datetime import datetime, timedelta
+from datetime import datetime
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import InstalledAppFlow
+from apscheduler.schedulers.background import BackgroundScheduler
 
 # Definir a variável de ambiente SSL_CERT_FILE
 os.environ['SSL_CERT_FILE'] = certifi.where()
@@ -18,9 +18,6 @@ CEARA_TZ = pytz.timezone('America/Fortaleza')
 
 # Defina os escopos necessários CLIENT_SECRET
 SCOPES = ["https://www.googleapis.com/auth/youtube.force-ssl"]
-
-# Horários de verificação em formato 24h
-check_times = ["08:32", "09:02","17:02", "18:02", "19:32"]
 
 # Arquivo onde as credenciais serão armazenadas
 youtube = None
@@ -94,66 +91,68 @@ DIVULGACAO_INSTAGRAM = "Acompanhe as atividades e programações da igreja no no
 DIVULGACAO_TIKTOK = "E nos acompanhe no TikTok - https://www.tiktok.com/@pibplanaltocaucaia"
 
 
-# Função para calcular o tempo até o próximo horário de verificação
-def time_until_next_check():
-    now = datetime.now(CEARA_TZ)
-    today_checks = [CEARA_TZ.localize(datetime.strptime(time_str, "%H:%M").replace(year=now.year, month=now.month, day=now.day)) for time_str in check_times]
-    future_checks = [check for check in today_checks if check > now]
-    if future_checks:
-        next_check = future_checks[0]
-    else:
-        next_check = today_checks[0] + timedelta(days=1)
-    return (next_check - now).total_seconds()
-
 def prepare_for_send_message_at_time_exact(live_chat_id, message, time_to_wait):
     time.sleep(time_to_wait)
     send_message(live_chat_id, message)
 
 def welcome_message(live_chat_id):
-    period = None
     now = datetime.now(CEARA_TZ)
     hour_actual = now.hour
+    dias_da_semana = ["", "", "CULTO DE QUARTA", "", "", "PROGRAMACAO DE SABADO", "CULTO DE DOMINGO"]
+    print(dias_da_semana[now.weekday()], end=" ")
     if 6 <= hour_actual < 12:
-        period = 1
+        print("MANHÃ")
+        prepare_for_send_message_at_time_exact(live_chat_id, BOAS_VINDAS_DIA, 5)
     elif 12 <= hour_actual < 18:
-        period = 2
+        print("TARDE")
+        prepare_for_send_message_at_time_exact(live_chat_id, BOAS_VINDAS_TARDE, 5)
     else:
-        period = 3
-
-    switch = {
-        1: lambda: prepare_for_send_message_at_time_exact(live_chat_id, BOAS_VINDAS_DIA, 5),
-        2: lambda: prepare_for_send_message_at_time_exact(live_chat_id, BOAS_VINDAS_TARDE, 5),
-        3: lambda: prepare_for_send_message_at_time_exact(live_chat_id, BOAS_VINDAS_NOITE, 5)
-    }
-    switch.get(period, lambda: None)()
+        print("NOITE")
+        prepare_for_send_message_at_time_exact(live_chat_id, BOAS_VINDAS_NOITE, 5)
 
 
 # Função principal para monitorar e enviar mensagens
 def main():
-    broadcast = None
-    try:
-        while True:
-            time_to_sleep = time_until_next_check()
-            print(f"Aguardando {time_to_sleep / 60:.2f} minutos ate a proxima verificaao.")
-            time.sleep(time_to_sleep)
+    broadcast = get_live_broadcast()
+    if broadcast:
+        live_chat_id = broadcast["snippet"]["liveChatId"]
+        welcome_message(live_chat_id)
 
-            # Verificar se há uma transmissão ao vivo
-            broadcast = get_live_broadcast()
-            if broadcast:
-                live_chat_id = broadcast["snippet"]["liveChatId"]
-                welcome_message(live_chat_id)
+        prepare_for_send_message_at_time_exact(live_chat_id, DIVULGACAO_INSTAGRAM, 150)
+        prepare_for_send_message_at_time_exact(live_chat_id, DIVULGACAO_TIKTOK, 0)
 
-                prepare_for_send_message_at_time_exact(live_chat_id, DIVULGACAO_INSTAGRAM, 150)
-                prepare_for_send_message_at_time_exact(live_chat_id, DIVULGACAO_TIKTOK, 0)
+        prepare_for_send_message_at_time_exact(live_chat_id, DIVULGACAO_INSTAGRAM, 4000)
+        prepare_for_send_message_at_time_exact(live_chat_id, DIVULGACAO_TIKTOK, 0)
 
-                prepare_for_send_message_at_time_exact(live_chat_id, DIVULGACAO_INSTAGRAM, 4000)
-                prepare_for_send_message_at_time_exact(live_chat_id, DIVULGACAO_TIKTOK, 0)
-            break
-    finally:
-        broadcast = None
+
+# Horários de verificação em formato 24h
+check_times = {
+    "08:32": [6],  # Domingo
+    "09:02": [6],  # Domingo
+    "17:02": [5, 6],  # Sábado e Domingo
+    "18:02": [5, 6],  # Sábado e Domingo
+    "19:32": [2]  # Quarta-feira
+}
+
+scheduler = BackgroundScheduler(timezone=CEARA_TZ)
+
+# Agendamento das tarefas
+for time_str, days in check_times.items():
+    hour, minute = map(int, time_str.split(':'))
+    for day in days:
+        scheduler.add_job(
+            main,
+            trigger='cron',
+            day_of_week=day,
+            hour=hour,
+            minute=minute
+        )
 
 if __name__ == "__main__":
-    while True:
-        main()
-        time_to_sleep = 60  
-        time.sleep(time_to_sleep)
+    scheduler.start()
+
+    try:
+        while True:
+            time.sleep(60) 
+    except (KeyboardInterrupt, SystemExit):
+        scheduler.shutdown()
