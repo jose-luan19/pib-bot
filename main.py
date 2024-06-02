@@ -8,7 +8,6 @@ from datetime import datetime
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
 from apscheduler.schedulers.background import BackgroundScheduler
-from google_auth_oauthlib.flow import InstalledAppFlow
 
 # Definir a variável de ambiente SSL_CERT_FILE
 os.environ['SSL_CERT_FILE'] = certifi.where()
@@ -25,7 +24,6 @@ youtube = None
 
 # Caminho para armazenar o token de acesso
 TOKEN_FILE = 'token.json'
-CREDENTIALS_FILE = "client_secret_28910878362-10nd9cvqpknk700ram1rndri4ngro5ck.apps.googleusercontent.com.json"
 current_broadcast_id = None
 
 def authenticate():
@@ -137,7 +135,6 @@ def main():
 check_times = {
     "08:32": [6],  # Domingo
     "09:02": [6],  # Domingo
-    "13:23": [6],  # Domingo
     "17:02": [5, 6],  # Sábado e Domingo
     "18:02": [5, 6],  # Sábado e Domingo
     "19:32": [2]  # Quarta-feira
