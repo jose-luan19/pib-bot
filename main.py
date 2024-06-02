@@ -8,6 +8,7 @@ from datetime import datetime
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
 from apscheduler.schedulers.background import BackgroundScheduler
+from google_auth_oauthlib.flow import InstalledAppFlow
 
 # Definir a variável de ambiente SSL_CERT_FILE
 os.environ['SSL_CERT_FILE'] = certifi.where()
@@ -24,6 +25,8 @@ youtube = None
 
 # Caminho para armazenar o token de acesso
 TOKEN_FILE = 'token.json'
+CREDENTIALS_FILE = "client_secret_28910878362-10nd9cvqpknk700ram1rndri4ngro5ck.apps.googleusercontent.com.json"
+current_broadcast_id = None
 
 def authenticate():
     global youtube
@@ -113,22 +116,28 @@ def welcome_message(live_chat_id):
 
 # Função principal para monitorar e enviar mensagens
 def main():
+    global current_broadcast_id
     broadcast = get_live_broadcast()
     if broadcast:
-        live_chat_id = broadcast["snippet"]["liveChatId"]
-        welcome_message(live_chat_id)
+        # Verifica se é a mesma transmissão
+        if current_broadcast_id == broadcast["id"]:
+            return
+        else:
+            live_chat_id = broadcast["snippet"]["liveChatId"]
+            current_broadcast_id = broadcast["id"]
+            welcome_message(live_chat_id)
 
-        prepare_for_send_message_at_time_exact(live_chat_id, DIVULGACAO_INSTAGRAM, 150)
-        prepare_for_send_message_at_time_exact(live_chat_id, DIVULGACAO_TIKTOK, 0)
+            prepare_for_send_message_at_time_exact(live_chat_id, DIVULGACAO_INSTAGRAM, 150)
+            prepare_for_send_message_at_time_exact(live_chat_id, DIVULGACAO_TIKTOK, 0)
 
-        prepare_for_send_message_at_time_exact(live_chat_id, DIVULGACAO_INSTAGRAM, 4000)
-        prepare_for_send_message_at_time_exact(live_chat_id, DIVULGACAO_TIKTOK, 0)
-
+            prepare_for_send_message_at_time_exact(live_chat_id, DIVULGACAO_INSTAGRAM, 4000)
+            prepare_for_send_message_at_time_exact(live_chat_id, DIVULGACAO_TIKTOK, 0)
 
 # Horários de verificação em formato 24h
 check_times = {
     "08:32": [6],  # Domingo
     "09:02": [6],  # Domingo
+    "13:23": [6],  # Domingo
     "17:02": [5, 6],  # Sábado e Domingo
     "18:02": [5, 6],  # Sábado e Domingo
     "19:32": [2]  # Quarta-feira
