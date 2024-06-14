@@ -1,0 +1,42 @@
+[jobs]
+  [[jobs.schedule]]
+    # Tarefa cron 1: 32 11 * * 0 (11:32 de domingo) UTC
+    name = "Job 1"
+    command = "python main.py"
+    schedule = "32 11 * * 0"
+
+  [[jobs.schedule]]
+    # Tarefa cron 2: 2 12 * * 0 (12:02 de domingo) UTC
+    name = "Job 2"
+    command = "python main.py"
+    schedule = "2 12 * * 0"
+
+  [[jobs.schedule]]
+    # Tarefa cron 3: 2 20 * * 0 (20:02 de domingo) UTC
+    name = "Job 3"
+    command = "python main.py"
+    schedule = "2 20 * * 0"
+
+  [[jobs.schedule]]
+    # Tarefa cron 4: 2 20 * * 6 (20:02 de sábado) UTC
+    name = "Job 4"
+    command = "python main.py"
+    schedule = "2 20 * * 6"
+
+  [[jobs.schedule]]
+    # Tarefa cron 5: 2 21 * * 0 (21:02 de domingo) UTC
+    name = "Job 5"
+    command = "python main.py"
+    schedule = "2 21 * * 0"
+
+  [[jobs.schedule]]
+    # Tarefa cron 6: 2 21 * * 6 (21:02 de sábado) UTC
+    name = "Job 6"
+    command = "python main.py"
+    schedule = "2 21 * * 6"
+
+  [[jobs.schedule]]
+    # Tarefa cron 7: 32 22 * * 3 (22:32 de quarta-feira) UTC
+    name = "Job 7"
+    command = "python main.py"
+    schedule = "32 22 * * 3"

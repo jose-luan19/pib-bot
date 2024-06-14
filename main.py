@@ -40,8 +40,9 @@ def authenticate():
                 creds.refresh(google.auth.transport.requests.Request())
                 
         youtube = build("youtube", "v3", credentials=creds)
-    except:
+    except Exception as ex:
         print("PROBLEMA AO RESGATAR AS CREDENCIAIS OU SE CONECTAR AO SERVICO DO YOUTUBE")
+        print(ex)
 
 
 
@@ -60,9 +61,9 @@ def get_live_broadcast():
             return response["items"][0]
         else:
             return None
-    except:
+    except Exception as ex:
         print("PROBLEMA AO RESGATAR STREAM")
-        return None
+        print(ex)
 
 # Função para enviar uma mensagem no chat ao vivo
 def send_message(live_chat_id, message):
@@ -80,8 +81,9 @@ def send_message(live_chat_id, message):
             }
         )
         request.execute()
-    except:
+    except Exception as ex:
         print("PROBLEMA AO ENVIAR MENSAGEM PARA YOUTBE")
+        print(ex)
 
 
 # Mensagem a ser enviada
@@ -137,7 +139,7 @@ check_times = {
     "09:02": [6],  # Domingo
     "17:02": [5, 6],  # Sábado e Domingo
     "18:02": [5, 6],  # Sábado e Domingo
-    "19:32": [2]  # Quarta-feira
+    "19:32": [2] # Quarta-feira
 }
 
 scheduler = BackgroundScheduler(timezone=CEARA_TZ)
