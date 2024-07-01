@@ -144,7 +144,7 @@ def main():
             scheduler.add_job(
                 send_message_about_instagram_and_tiktok,
                 trigger='date',
-                run_date=datetime.now(CEARA_TZ) + timedelta(minutes=2),
+                run_date=datetime.now(CEARA_TZ) + timedelta(minutes=4),
                 args=[live_chat_id]
             )
 
@@ -162,7 +162,7 @@ check_times = {
     "09:02": [6],  # Domingo
     "17:02": [5, 6],  # Sábado e Domingo
     "18:02": [5, 6],  # Sábado e Domingo
-    "19:32": [2], # Quarta-feira
+    "19:32": [2,3,4,5], # Quarta-feira
 }
 
 scheduler = BackgroundScheduler(timezone=CEARA_TZ)
