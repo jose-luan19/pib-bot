@@ -4,12 +4,13 @@ import certifi
 import pytz
 import ssl
 import google.auth.transport.requests
-from datetime import datetime
+from datetime import datetime, timedelta
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
 from apscheduler.schedulers.background import BackgroundScheduler
+from google_auth_oauthlib.flow import InstalledAppFlow
 
-# Definir a variável de ambiente SSL_CERT_FILE
+# # Definir a variável de ambiente SSL_CERT_FILE
 os.environ['SSL_CERT_FILE'] = certifi.where()
 ssl._create_default_https_context = ssl.create_default_context(cafile=certifi.where())
 
@@ -24,6 +25,7 @@ youtube = None
 
 # Caminho para armazenar o token de acesso
 TOKEN_FILE = 'token.json'
+CLIENT_SECRET_FILE = 'credentials.json'
 current_broadcast_id = None
 
 def authenticate():
@@ -34,11 +36,22 @@ def authenticate():
         if os.path.exists(TOKEN_FILE):
             creds = Credentials.from_authorized_user_file(TOKEN_FILE, SCOPES)
     
-        # Se não houver credenciais válidas, solicite ao usuário fazer login
-        if not creds or not creds.valid:
-            if creds and creds.expired and creds.refresh_token:
-                creds.refresh(google.auth.transport.requests.Request())
-                
+            # Se não houver credenciais válidas, solicite ao usuário fazer login
+            if not creds or not creds.valid:
+                if creds and creds.expired and creds.refresh_token:
+                    creds.refresh(google.auth.transport.requests.Request())
+        else:
+            print('TOKEN NOT FOUND')
+            railway_environment = os.getenv('RAILWAY_ENVIRONMENT_NAME')
+
+            if railway_environment is not None and railway_environment == 'production':
+                raise Exception("EM PRODUCAO NAO E POSSIVEL ABRIR JANELA DE AUTENTICACAO")
+            flow = InstalledAppFlow.from_client_secrets_file(CLIENT_SECRET_FILE, SCOPES)
+            creds = flow.run_local_server(port=0)
+        
+            with open(TOKEN_FILE, 'w') as token:
+                token.write(creds.to_json())
+                    
         youtube = build("youtube", "v3", credentials=creds)
     except Exception as ex:
         print("PROBLEMA AO RESGATAR AS CREDENCIAIS OU SE CONECTAR AO SERVICO DO YOUTUBE")
@@ -94,9 +107,9 @@ DIVULGACAO_INSTAGRAM = "Acompanhe as atividades e programações da igreja no no
 DIVULGACAO_TIKTOK = "E nos acompanhe no TikTok - https://www.tiktok.com/@pibplanaltocaucaia"
 
 
-def prepare_for_send_message_at_time_exact(live_chat_id, message, time_to_wait):
-    time.sleep(time_to_wait)
-    send_message(live_chat_id, message)
+def send_message_about_instagram_and_tiktok(live_chat_id):
+    send_message(live_chat_id, DIVULGACAO_INSTAGRAM)
+    send_message(live_chat_id, DIVULGACAO_TIKTOK)
 
 def welcome_message(live_chat_id):
     now = datetime.now(CEARA_TZ)
@@ -105,13 +118,13 @@ def welcome_message(live_chat_id):
     print(dias_da_semana[now.weekday()], end=" ")
     if 6 <= hour_actual < 12:
         print("MANHÃ")
-        prepare_for_send_message_at_time_exact(live_chat_id, BOAS_VINDAS_DIA, 5)
+        send_message(live_chat_id, BOAS_VINDAS_DIA)
     elif 12 <= hour_actual < 18:
         print("TARDE")
-        prepare_for_send_message_at_time_exact(live_chat_id, BOAS_VINDAS_TARDE, 5)
+        send_message(live_chat_id, BOAS_VINDAS_TARDE)
     else:
         print("NOITE")
-        prepare_for_send_message_at_time_exact(live_chat_id, BOAS_VINDAS_NOITE, 5)
+        send_message(live_chat_id, BOAS_VINDAS_NOITE)
 
 
 # Função principal para monitorar e enviar mensagens
@@ -127,11 +140,21 @@ def main():
             current_broadcast_id = broadcast["id"]
             welcome_message(live_chat_id)
 
-            prepare_for_send_message_at_time_exact(live_chat_id, DIVULGACAO_INSTAGRAM, 150)
-            prepare_for_send_message_at_time_exact(live_chat_id, DIVULGACAO_TIKTOK, 0)
+            # Agendar a tarefa para executar em 5 minutos
+            scheduler.add_job(
+                send_message_about_instagram_and_tiktok,
+                trigger='date',
+                run_date=datetime.now(CEARA_TZ) + timedelta(minutes=2),
+                args=[live_chat_id]
+            )
 
-            prepare_for_send_message_at_time_exact(live_chat_id, DIVULGACAO_INSTAGRAM, 4000)
-            prepare_for_send_message_at_time_exact(live_chat_id, DIVULGACAO_TIKTOK, 0)
+            # Agendar a tarefa para executar em 70 minutos
+            scheduler.add_job(
+                send_message_about_instagram_and_tiktok,
+                trigger='date',
+                run_date=datetime.now(CEARA_TZ) + timedelta(minutes=70),
+                args=[live_chat_id]
+            )
 
 # Horários de verificação em formato 24h
 check_times = {
@@ -139,7 +162,7 @@ check_times = {
     "09:02": [6],  # Domingo
     "17:02": [5, 6],  # Sábado e Domingo
     "18:02": [5, 6],  # Sábado e Domingo
-    "19:32": [2] # Quarta-feira
+    "19:32": [2], # Quarta-feira
 }
 
 scheduler = BackgroundScheduler(timezone=CEARA_TZ)
