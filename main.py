@@ -114,7 +114,7 @@ def send_message_about_instagram_and_tiktok(live_chat_id):
 def welcome_message(live_chat_id):
     now = datetime.now(CEARA_TZ)
     hour_actual = now.hour
-    dias_da_semana = ["", "", "CULTO DE QUARTA", "", "", "PROGRAMACAO DE SABADO", "CULTO DE DOMINGO"]
+    dias_da_semana = ["PROGRAMACAO DE SEGUNDA", "PROGRAMACAO DE TERCA", "CULTO DE QUARTA", "PROGRAMACAO DE QUINTA", "PROGRAMACAO DE SEXTA", "PROGRAMACAO DE SABADO", "CULTO DE DOMINGO"]
     print(dias_da_semana[now.weekday()], end=" ")
     if 6 <= hour_actual < 12:
         print("MANHÃ")
@@ -141,20 +141,20 @@ def main():
             welcome_message(live_chat_id)
 
             # Agendar a tarefa para executar em 5 minutos
-            scheduler.add_job(
-                send_message_about_instagram_and_tiktok,
-                trigger='date',
-                run_date=datetime.now(CEARA_TZ) + timedelta(minutes=4),
-                args=[live_chat_id]
-            )
+            sheduler_jobs(method=send_message_about_instagram_and_tiktok, time_minute=3, live_chat_id=live_chat_id)
 
             # Agendar a tarefa para executar em 70 minutos
-            scheduler.add_job(
-                send_message_about_instagram_and_tiktok,
-                trigger='date',
-                run_date=datetime.now(CEARA_TZ) + timedelta(minutes=70),
-                args=[live_chat_id]
-            )
+            sheduler_jobs(method=send_message_about_instagram_and_tiktok, time_minute=70, live_chat_id=live_chat_id)
+
+            
+
+def sheduler_jobs(method, time_minute, live_chat_id):
+    scheduler.add_job(
+        method,
+        trigger='date',
+        run_date=datetime.now(CEARA_TZ) + timedelta(minutes=time_minute),
+        args=[live_chat_id]
+    )
 
 # Horários de verificação em formato 24h
 check_times = {
