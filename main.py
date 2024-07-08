@@ -158,11 +158,11 @@ def sheduler_jobs(method, time_minute, live_chat_id):
 
 # Horários de verificação em formato 24h
 check_times = {
-    "08:32": [6],  # Domingo
-    "09:02": [6],  # Domingo
-    "17:02": [5, 6],  # Sábado e Domingo
-    "18:02": [5, 6],  # Sábado e Domingo
-    "19:32": [2,3,4,5], # Quarta-feira
+    "08:31": [6],  # Domingo
+    "09:01": [6],  # Domingo
+    "17:01": [5, 6],  # Sábado e Domingo
+    "18:01": [5, 6],  # Sábado e Domingo
+    "19:31": [2], # Quarta-feira
 }
 
 scheduler = BackgroundScheduler(timezone=CEARA_TZ)
