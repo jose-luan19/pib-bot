@@ -142,10 +142,10 @@ def main():
         welcome_message(live_chat_id)
 
         # Agendar a tarefa para executar em 5 minutos
-        sheduler_jobs(method=send_message_about_instagram_and_tiktok, time_minute=1, live_chat_id=live_chat_id)
+        sheduler_jobs(method=send_message_about_instagram_and_tiktok, time_minute=3, live_chat_id=live_chat_id)
 
         # Agendar a tarefa para executar em 70 minutos
-        sheduler_jobs(method=send_message_about_instagram_and_tiktok, time_minute=2, live_chat_id=live_chat_id)
+        sheduler_jobs(method=send_message_about_instagram_and_tiktok, time_minute=65, live_chat_id=live_chat_id)
         ending_bot = True
 
 def sheduler_jobs(method, time_minute, live_chat_id):
@@ -186,7 +186,8 @@ def callback():
     flow = Flow.from_client_config(client_config, SCOPES, state=state)
     flow.redirect_uri = REDIRECT_URI
 
-    authorization_response = request.url
+    # authorization_response = request.url
+    authorization_response = os.getenv('DOMAIN', 'https://127.0.0.1:5000')  + request.full_path
     print('authorization_response:'+ authorization_response)
     
     flow.fetch_token(authorization_response=authorization_response)
@@ -227,6 +228,6 @@ if __name__ == "__main__":
     scheduler.start()
 
     try:
-        app.run()
+        app.run(ssl_context=('localhost.pem', 'localhost-key.pem'))
     except (KeyboardInterrupt, SystemExit):
         scheduler.shutdown()
