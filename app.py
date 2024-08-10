@@ -47,12 +47,17 @@ def get_credentials():
         creds_data = session['credentials']
         creds = Credentials(
             token=creds_data['token'],
-            refresh_token=creds_data['refresh_token'],
-            token_uri=creds_data['token_uri'],
+            refresh_token=creds_data.get('refresh_token'),
+            token_uri=creds_data.get('token_uri'),
             client_id=os.getenv('CLIENT_ID'),
             client_secret=os.getenv('CLIENT_SECRET'),
-            scopes=creds_data['scopes']
+            scopes=creds_data.get('scopes')
         )
+        
+        # Check if the necessary fields are present
+        if not (creds.refresh_token and creds.token_uri and creds.client_id and creds.client_secret):
+            print('Missing necessary fields in credentials')
+            return None
 
         # Refresh the token if it has expired
         if creds.expired and creds.refresh_token:
