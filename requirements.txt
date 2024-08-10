@@ -1,12 +1,16 @@
 altgraph==0.17.4
 APScheduler==3.10.4
+blinker==1.8.2
 cachetools==5.3.3
 certifi==2024.2.2
 charset-normalizer==3.3.2
+click==8.1.7
+colorama==0.4.6
 contourpy==1.2.0
 customtkinter==5.2.2
 cycler==0.12.1
 darkdetect==0.8.0
+Flask==3.0.3
 fonttools==4.50.0
 google-api-core==2.19.0
 google-api-python-client==2.129.0
@@ -16,9 +20,13 @@ google-auth-oauthlib==1.2.0
 googleapis-common-protos==1.63.0
 grpcio==1.64.0
 grpcio-status==1.62.2
+gunicorn==22.0.0
 httplib2==0.22.0
 idna==3.7
+itsdangerous==2.2.0
+Jinja2==3.1.4
 kiwisolver==1.4.5
+MarkupSafe==2.1.5
 matplotlib==3.8.3
 numpy==1.26.4
 oauthlib==3.2.2
@@ -33,6 +41,7 @@ pyinstaller==6.7.0
 pyinstaller-hooks-contrib==2024.6
 pyparsing==3.1.2
 python-dateutil==2.9.0.post0
+python-dotenv==1.0.1
 pytz==2024.1
 pywin32-ctypes==0.2.2
 requests==2.31.0
@@ -45,4 +54,4 @@ tzdata==2024.1
 tzlocal==5.2
 uritemplate==4.1.1
 urllib3==2.2.1
-gunicorn
+Werkzeug==3.0.3
