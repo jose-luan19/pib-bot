@@ -26,7 +26,7 @@ ending_bot = False
 
 # Configuração do cliente OAuth
 REDIRECT_URI = os.getenv('DOMAIN', 'https://127.0.0.1:5000') + '/callback'
-print('REDIRECT_URI:'+ REDIRECT_URI)
+# print('REDIRECT_URI:'+ REDIRECT_URI)
 
 client_config = {
     "web": {
@@ -39,6 +39,9 @@ client_config = {
         "redirect_uris": [REDIRECT_URI]
     }
 }
+
+scheduler = BackgroundScheduler(timezone=CEARA_TZ)
+
 def get_credentials():
     if 'credentials' in session:
         creds_data = session['credentials']
@@ -228,7 +231,6 @@ def creds_to_dict(creds):
 
 
 if __name__ == "__main__":
-    scheduler = BackgroundScheduler(timezone=CEARA_TZ)
     scheduler.start()
 
     try:
