@@ -26,6 +26,7 @@ ending_bot = False
 
 # Configuração do cliente OAuth
 REDIRECT_URI = os.getenv('DOMAIN', 'https://127.0.0.1:5000') + '/callback'
+print('REDIRECT_URI:'+ REDIRECT_URI)
 
 client_config = {
     "web": {
@@ -171,6 +172,9 @@ def authorize():
         include_granted_scopes='true'
     )
     session['state'] = state
+    print('REDIRECT_URI:'+ flow.redirect_uri)
+    print('authorization_url:'+ authorization_url)
+    
     return redirect(authorization_url)
 
 @app.route('/callback')
@@ -183,6 +187,8 @@ def callback():
     flow.redirect_uri = REDIRECT_URI
 
     authorization_response = request.url
+    print('authorization_response:'+ authorization_response)
+    
     flow.fetch_token(authorization_response=authorization_response)
 
     credentials = flow.credentials
