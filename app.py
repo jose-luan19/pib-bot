@@ -118,6 +118,8 @@ DIVULGACAO_TIKTOK = "E nos acompanhe no TikTok - https://www.tiktok.com/@pibplan
 def send_message_about_instagram_and_tiktok(live_chat_id):
     send_message(live_chat_id, DIVULGACAO_INSTAGRAM)
     send_message(live_chat_id, DIVULGACAO_TIKTOK)
+    print('ENVIOU DIVULGACAO')
+    
 
 def welcome_message(live_chat_id):
     now = datetime.now(CEARA_TZ)
@@ -133,6 +135,7 @@ def welcome_message(live_chat_id):
     else:
         print("NOITE")
         send_message(live_chat_id, BOAS_VINDAS_NOITE)
+    print('ENVIOU BOAS VINDAS')
 
 def main():
     broadcast = get_live_broadcast()
@@ -149,6 +152,7 @@ def main():
         ending_bot = True
 
 def sheduler_jobs(method, time_minute, live_chat_id):
+    global scheduler
     scheduler.add_job(
         method,
         trigger='date',
@@ -228,6 +232,7 @@ if __name__ == "__main__":
     scheduler.start()
 
     try:
-        app.run(ssl_context=('localhost.pem', 'localhost-key.pem'))
+        app.run()
+        # app.run(host='0.0.0.0', port=int(os.getenv('PORT', 5000)), ssl_context=('localhost.pem', 'localhost-key.pem'))
     except (KeyboardInterrupt, SystemExit):
         scheduler.shutdown()
