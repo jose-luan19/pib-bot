@@ -1,5 +1,4 @@
 import os
-import time
 import pytz
 import google.auth.transport.requests
 from datetime import datetime, timedelta
@@ -7,7 +6,8 @@ from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
 from apscheduler.schedulers.background import BackgroundScheduler
 from google_auth_oauthlib.flow import Flow
-from flask import Flask, session, redirect, url_for, request
+from flask import Flask, render_template, session, redirect, url_for, request
+import atexit
 
 # Configuração do Flask
 app = Flask(__name__)
@@ -19,12 +19,14 @@ CEARA_TZ = pytz.timezone('America/Fortaleza')
 # Defina os escopos necessários CLIENT_SECRET
 SCOPES = ["https://www.googleapis.com/auth/youtube.force-ssl"]
 
-# Caminho para armazenar o token de acesso
+# Variáveis globais
 current_broadcast_id = None
 youtube = None
 ending_bot = False
+tentativas = 0
+scheduler = BackgroundScheduler(timezone=CEARA_TZ)
+scheduler.start()
 
-# Configuração do cliente OAuth
 REDIRECT_URI = os.getenv('DOMAIN', 'https://127.0.0.1:5000') + '/callback'
 # print('REDIRECT_URI:'+ REDIRECT_URI)
 
@@ -40,7 +42,8 @@ client_config = {
     }
 }
 
-scheduler = BackgroundScheduler(timezone=CEARA_TZ)
+# Para garantir que o scheduler seja desligado corretamente ao encerrar a aplicação
+atexit.register(lambda: scheduler.shutdown())
 
 def get_credentials():
     if 'credentials' in session:
@@ -96,7 +99,7 @@ def get_live_broadcast():
             return None
     except Exception as ex:
         print("PROBLEMA AO RESGATAR STREAM")
-        print(ex)
+        print(ex.__cause__)
 
 def send_message(live_chat_id, message):
     try:
@@ -115,7 +118,7 @@ def send_message(live_chat_id, message):
         request.execute()
     except Exception as ex:
         print("PROBLEMA AO ENVIAR MENSAGEM PARA YOUTBE")
-        print(ex)
+        print(ex.__cause__)
 
 BOAS_VINDAS_DIA = "Bom Dia, sejam bem vindos."
 BOAS_VINDAS_TARDE = "Boa Tarde, sejam bem vindos."
@@ -153,12 +156,12 @@ def main():
         welcome_message(live_chat_id)
 
         # Agendar a tarefa para executar em 5 minutos
-        sheduler_jobs(method=send_message_about_instagram_and_tiktok, time_minute=3, live_chat_id=live_chat_id)
+        sheduler_jobs(method=send_message_about_instagram_and_tiktok, time_minute=1, live_chat_id=live_chat_id)
 
         # Agendar a tarefa para executar em 70 minutos
         sheduler_jobs(method=send_message_about_instagram_and_tiktok, time_minute=65, live_chat_id=live_chat_id)
         ending_bot = True
-
+    
 def sheduler_jobs(method, time_minute, live_chat_id):
     global scheduler
     scheduler.add_job(
@@ -167,6 +170,36 @@ def sheduler_jobs(method, time_minute, live_chat_id):
         run_date=datetime.now(CEARA_TZ) + timedelta(minutes=time_minute),
         args=[live_chat_id]
     )
+    
+
+def creds_to_dict(creds):
+    return {
+        'token': creds.token,
+        'refresh_token': creds.refresh_token,
+        'token_uri': creds.token_uri,
+        'scopes': creds.scopes
+    }
+    
+def try_connecting():
+    global tentativas, ending_bot
+    tentativas += 1
+    main()
+
+    # Se passar de 6 tentativas (30 minutos), parar o scheduler
+    if tentativas >= 6:
+        # Redirecionar para a página de resultado com falha
+        return redirect_to_result('failed')
+
+    # Se o ending_bot for True, o job é removido e redireciona para a página de sucesso
+    if ending_bot:
+        return redirect_to_result('success')
+
+    return None  # Continua no processo de espera
+
+def redirect_to_result(status):
+    # Redireciona para a página de resultado
+    session['status'] = status
+    return redirect(url_for('result'))
 
 @app.route('/')
 def authorize():
@@ -174,7 +207,7 @@ def authorize():
 
     if creds and creds.valid:
         # Token is valid, proceed to the main functionality
-        return redirect(url_for('start'))
+        return redirect(url_for('waiting'))
     
     # If no valid token, proceed with the OAuth flow
     flow = Flow.from_client_config(client_config, SCOPES)
@@ -184,8 +217,8 @@ def authorize():
         include_granted_scopes='true'
     )
     session['state'] = state
-    print('REDIRECT_URI:'+ flow.redirect_uri)
-    print('authorization_url:'+ authorization_url)
+    # print('REDIRECT_URI:'+ flow.redirect_uri)
+    # print('authorization_url:'+ authorization_url)
     
     return redirect(authorization_url)
 
@@ -200,46 +233,40 @@ def callback():
 
     # authorization_response = request.url
     authorization_response = os.getenv('DOMAIN', 'https://127.0.0.1:5000')  + request.full_path
-    print('authorization_response:'+ authorization_response)
+    # print('authorization_response:'+ authorization_response)
     
     flow.fetch_token(authorization_response=authorization_response)
 
     credentials = flow.credentials
     session['credentials'] = creds_to_dict(credentials)
 
-    return redirect(url_for('start'))
+    return redirect(url_for('waiting'))
 
 
+@app.route('/check_status')
+def check_status():
+   # Tentar conectar e programar as mensagens
+    result = try_connecting()
+    if result:
+        return result  # Se já estiver pronto, redireciona para a página de resultado
+    return '', 204  # Retorna uma resposta vazia se ainda não estiver pronto
 
-@app.route('/start')
-def start():
-    global ending_bot
-    ending_bot = False
-    for _ in range(6):  # Tenta por 30 minutos
-        main()
-        if ending_bot:
-            print('BOT programou mensagens')
-            return 'OK - MENSAGENS PROGRAMADAS CHEFIA'
-        time.sleep(300)  # Checa a cada 5 minutos
-    print('Bot encerrado após 30 minutos de tentativas.')
-    return 
-    
-            
+@app.route('/waiting')
+def waiting():
+    result = try_connecting()
+    if result:
+        return result  # Se já estiver pronto, redireciona para a página de resultado
+    # Renderiza a página de espera se ainda estiver processando
+    return render_template('waiting.html')
 
-def creds_to_dict(creds):
-    return {
-        'token': creds.token,
-        'refresh_token': creds.refresh_token,
-        'token_uri': creds.token_uri,
-        'scopes': creds.scopes
-    }
-
+@app.route('/result')
+def result():
+    status = session.get('status')
+    return render_template('result.html', status=status)
 
 if __name__ == "__main__":
-    scheduler.start()
-
     try:
         app.run()
-        # app.run(host='0.0.0.0', port=int(os.getenv('PORT', 5000)), ssl_context=('localhost.pem', 'localhost-key.pem'))
+        # app.run(host='0.0.0.0', port=int(os.getenv('PORT', 5000)), ssl_context=('localhost.pem', 'localhost-key.pem'), debug=True)
     except (KeyboardInterrupt, SystemExit):
         scheduler.shutdown()

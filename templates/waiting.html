@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Esperando Live</title>
+    <script>
+      function checkStatus() {
+          fetch('/check_status')
+            .then(response => {
+                if (response.redirected) {
+                    window.location.href = response.url;
+                }
+              })
+            .catch(error => console.error('Erro ao verificar status:', error));
+      }
+
+      setInterval(checkStatus, 60000); // Verifica a cada 60 segundos
+  </script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 50px;
+        }
+        .warning{
+            font-size: 16px;
+            color: #eb0808;
+            margin-bottom: 50px;
+        }
+        .message {
+            font-size: 30px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .spinner {
+            border: 16px solid #f3f3f3; /* Light grey */
+            border-top: 16px solid #3498db; /* Blue */
+            border-radius: 50%;
+            width: 120px;
+            height: 120px;
+            animation: spin 2s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="message">
+        Esperando uma live para programar o bot...
+    </div>
+    <p class="warning">NÃO FECHE ESSA ABA</p>
+    <div class="spinner"></div>
+</body>
+</html>

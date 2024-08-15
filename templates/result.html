@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resultado</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 50px;
+        }
+        .success {
+            color: green;
+            font-size: 24px;
+        }
+        .failed {
+            color: red;
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body>
+    {% if status == 'success' %}
+        <div class="success">MENSAGENS PROGRAMADAS CHEFIA</div>
+    {% else %}
+        <div class="failed">Bot encerrado após 30 minutos de tentativas de ativação.</div>
+    {% endif %}
+</body>
+</html>
