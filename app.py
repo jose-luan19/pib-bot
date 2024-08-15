@@ -60,6 +60,7 @@ def get_credentials():
         # Check if the necessary fields are present
         if not (creds.refresh_token and creds.token_uri and creds.client_id and creds.client_secret):
             print('Missing necessary fields in credentials')
+            print(creds)
             return None
 
         # Refresh the token if it has expired
@@ -99,7 +100,7 @@ def get_live_broadcast():
             return None
     except Exception as ex:
         print("PROBLEMA AO RESGATAR STREAM")
-        print(ex.__cause__)
+        print(ex)
 
 def send_message(live_chat_id, message):
     try:
@@ -118,7 +119,7 @@ def send_message(live_chat_id, message):
         request.execute()
     except Exception as ex:
         print("PROBLEMA AO ENVIAR MENSAGEM PARA YOUTBE")
-        print(ex.__cause__)
+        print(ex)
 
 BOAS_VINDAS_DIA = "Bom Dia, sejam bem vindos."
 BOAS_VINDAS_TARDE = "Boa Tarde, sejam bem vindos."
