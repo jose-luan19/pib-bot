@@ -49,18 +49,20 @@ def get_credentials():
     if 'credentials' in session:
         creds_data = session['credentials']
         creds = Credentials(
-            token=creds_data['token'],
+            token=creds_data.get('token'),
             refresh_token=creds_data.get('refresh_token'),
             token_uri=creds_data.get('token_uri'),
             client_id=os.getenv('CLIENT_ID'),
             client_secret=os.getenv('CLIENT_SECRET'),
             scopes=creds_data.get('scopes')
         )
-        
+        print(creds_to_dict(creds))
+        print(creds_data.get('token'))
+        print(os.getenv('CLIENT_ID'))
+        print(os.getenv('CLIENT_SECRET'))
         # Check if the necessary fields are present
         if not (creds.refresh_token and creds.token_uri and creds.client_id and creds.client_secret):
             print('Missing necessary fields in credentials')
-            print(creds)
             return None
 
         # Refresh the token if it has expired
@@ -267,7 +269,7 @@ def result():
 
 if __name__ == "__main__":
     try:
-        app.run()
-        # app.run(host='0.0.0.0', port=int(os.getenv('PORT', 5000)), ssl_context=('localhost.pem', 'localhost-key.pem'), debug=True)
+        # app.run()
+        app.run(host='0.0.0.0', port=int(os.getenv('PORT', 5000)), ssl_context=('localhost.pem', 'localhost-key.pem'), debug=True)
     except (KeyboardInterrupt, SystemExit):
         scheduler.shutdown()
