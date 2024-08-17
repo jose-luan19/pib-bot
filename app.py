@@ -76,6 +76,11 @@ def get_credentials():
     if 'user_id' in session:
         user_id = session['user_id']
         creds = load_credentials_from_file(user_id)
+        print(creds_to_dict(creds))
+        print(creds.client_secret)
+        print(creds.client_id)
+        print(creds.token_uri)
+        print(creds.refresh_token)
         
         if not creds:
             print('Could not load credentials from file')
