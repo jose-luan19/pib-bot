@@ -81,6 +81,7 @@ def get_credentials():
         print(creds.client_id)
         print(creds.token_uri)
         print(creds.refresh_token)
+        print(creds.token)
         
         if not creds:
             print('Could not load credentials from file')
