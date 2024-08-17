@@ -1,3 +1,4 @@
+import json
 import os
 import pytz
 import google.auth.transport.requests
@@ -16,8 +17,6 @@ app.secret_key = os.getenv('SECRET_KEY', 'your_secret_key')
 # Definindo o fuso horário do Brasil/Ceará
 CEARA_TZ = pytz.timezone('America/Fortaleza')
 
-# Defina os escopos necessários CLIENT_SECRET
-SCOPES = ["https://www.googleapis.com/auth/youtube.force-ssl"]
 
 # Variáveis globais
 current_broadcast_id = None
@@ -27,6 +26,8 @@ tentativas = 0
 scheduler = BackgroundScheduler(timezone=CEARA_TZ)
 scheduler.start()
 
+# Defina os escopos necessários CLIENT_SECRET
+SCOPES = ["https://www.googleapis.com/auth/youtube.force-ssl"]
 REDIRECT_URI = os.getenv('DOMAIN', 'https://127.0.0.1:5000') + '/callback'
 # print('REDIRECT_URI:'+ REDIRECT_URI)
 
@@ -42,24 +43,44 @@ client_config = {
     }
 }
 
+def save_credentials_to_file(creds, user_id):
+    # Define o caminho onde as credenciais serão armazenadas
+    creds_file = f'creds_{user_id}.json'
+    with open(creds_file, 'w') as f:
+        json.dump(creds_to_dict(creds), f)
+
+def load_credentials_from_file(user_id):
+    # Define o caminho do arquivo de credenciais
+    creds_file = f'creds_{user_id}.json'
+    try:
+        with open(creds_file, 'r') as f:
+            creds_data = json.load(f)
+            expiry = datetime.fromisoformat(creds_data['expiry']) if creds_data.get('expiry') else None
+            creds = Credentials(
+                token=creds_data.get('token'),
+                refresh_token=creds_data.get('refresh_token'),
+                token_uri= client_config['web']['token_uri'],
+                client_id=client_config['web']['client_id'],
+                client_secret=client_config['web']['client_secret'],
+                scopes=SCOPES,
+                expiry=expiry
+            )
+            return creds
+    except FileNotFoundError:
+        return None
+
 # Para garantir que o scheduler seja desligado corretamente ao encerrar a aplicação
 atexit.register(lambda: scheduler.shutdown())
 
 def get_credentials():
-    if 'credentials' in session:
-        creds_data = session['credentials']
-        creds = Credentials(
-            token=creds_data.get('token'),
-            refresh_token=creds_data.get('refresh_token'),
-            token_uri= "https://oauth2.googleapis.com/token",
-            client_id=os.getenv('CLIENT_ID'),
-            client_secret=os.getenv('CLIENT_SECRET'),
-            scopes=SCOPES
-        )
-        print(creds_to_dict(creds))
-        print(creds_data.get('refresh_token'))
-        print(creds.refresh_token)
-        # Check if the necessary fields are present
+    if 'user_id' in session:
+        user_id = session['user_id']
+        creds = load_credentials_from_file(user_id)
+        
+        if not creds:
+            print('Could not load credentials from file')
+            return None
+
         if not (creds.refresh_token and creds.token_uri and creds.client_id and creds.client_secret):
             print('Missing necessary fields in credentials')
             return None
@@ -68,7 +89,7 @@ def get_credentials():
         if creds.expired and creds.refresh_token:
             try:
                 creds.refresh(google.auth.transport.requests.Request())
-                session['credentials'] = creds_to_dict(creds)
+                save_credentials_to_file(creds, user_id)  # Salva as credenciais atualizadas
             except Exception as e:
                 print(f'Error refreshing credentials: {e}')
                 return None
@@ -177,7 +198,9 @@ def sheduler_jobs(method, time_minute, live_chat_id):
 def creds_to_dict(creds):
     return {
         'token': creds.token,
-        'refresh_token': creds.refresh_token
+        'refresh_token': creds.refresh_token,
+        'expiry': creds.expiry.isoformat() if creds.expiry else None
+        
     }
     
 def try_connecting():
@@ -238,7 +261,11 @@ def callback():
     flow.fetch_token(authorization_response=authorization_response)
 
     credentials = flow.credentials
-    session['credentials'] = creds_to_dict(credentials)
+    user_id = 'pib_bot_chat'  # Substitua pelo ID real do usuário ou um identificador único
+    save_credentials_to_file(credentials, user_id)
+
+    # Armazena o user_id na sessão para uso futuro
+    session['user_id'] = user_id
 
     return redirect(url_for('waiting'))
 
@@ -266,7 +293,7 @@ def result():
 
 if __name__ == "__main__":
     try:
-        app.run()
-        # app.run(host='0.0.0.0', port=int(os.getenv('PORT', 5000)), ssl_context=('localhost.pem', 'localhost-key.pem'), debug=True)
+        # app.run()
+        app.run(host='0.0.0.0', port=int(os.getenv('PORT', 5000)), ssl_context=('localhost.pem', 'localhost-key.pem'), debug=True)
     except (KeyboardInterrupt, SystemExit):
         scheduler.shutdown()
