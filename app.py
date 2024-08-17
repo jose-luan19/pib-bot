@@ -87,18 +87,20 @@ def get_credentials():
             print('Could not load credentials from file')
             return None
 
-        if not (creds.refresh_token and creds.token_uri and creds.client_id and creds.client_secret):
-            print('Missing necessary fields in credentials')
-            return None
+        # if not (creds.refresh_token and creds.token_uri and creds.client_id and creds.client_secret):
+        #     print('Missing necessary fields in credentials')
+        #     return None
 
         # Refresh the token if it has expired
-        if creds.expired and creds.refresh_token:
-            try:
-                creds.refresh(google.auth.transport.requests.Request())
-                save_credentials_to_file(creds, user_id)  # Salva as credenciais atualizadas
-            except Exception as e:
-                print(f'Error refreshing credentials: {e}')
-                return None
+        # if creds.expired and creds.refresh_token:
+        if creds.expired:
+            # try:
+            #     # creds.refresh(google.auth.transport.requests.Request())
+            #     # save_credentials_to_file(creds, user_id)  # Salva as credenciais atualizadas
+            #     return None
+            # except Exception as e:
+            #     print(f'Error refreshing credentials: {e}')
+            return None
 
         return creds
     return None
@@ -267,6 +269,7 @@ def callback():
     flow.fetch_token(authorization_response=authorization_response)
 
     credentials = flow.credentials
+    print(creds_to_dict(credentials))
     user_id = 'pib_bot_chat'  # Substitua pelo ID real do usuário ou um identificador único
     save_credentials_to_file(credentials, user_id)
 
