@@ -51,15 +51,14 @@ def get_credentials():
         creds = Credentials(
             token=creds_data.get('token'),
             refresh_token=creds_data.get('refresh_token'),
-            token_uri=creds_data.get('token_uri'),
+            token_uri= "https://oauth2.googleapis.com/token",
             client_id=os.getenv('CLIENT_ID'),
             client_secret=os.getenv('CLIENT_SECRET'),
-            scopes=creds_data.get('scopes')
+            scopes=SCOPES
         )
         print(creds_to_dict(creds))
-        print(creds_data.get('token'))
-        print(os.getenv('CLIENT_ID'))
-        print(os.getenv('CLIENT_SECRET'))
+        print(creds_data.get('refresh_token'))
+        print(creds.refresh_token)
         # Check if the necessary fields are present
         if not (creds.refresh_token and creds.token_uri and creds.client_id and creds.client_secret):
             print('Missing necessary fields in credentials')
@@ -178,9 +177,7 @@ def sheduler_jobs(method, time_minute, live_chat_id):
 def creds_to_dict(creds):
     return {
         'token': creds.token,
-        'refresh_token': creds.refresh_token,
-        'token_uri': creds.token_uri,
-        'scopes': creds.scopes
+        'refresh_token': creds.refresh_token
     }
     
 def try_connecting():
