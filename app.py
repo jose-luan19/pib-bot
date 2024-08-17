@@ -293,7 +293,7 @@ def result():
 
 if __name__ == "__main__":
     try:
-        # app.run()
-        app.run(host='0.0.0.0', port=int(os.getenv('PORT', 5000)), ssl_context=('localhost.pem', 'localhost-key.pem'), debug=True)
+        app.run()
+        # app.run(host='0.0.0.0', port=int(os.getenv('PORT', 5000)), ssl_context=('localhost.pem', 'localhost-key.pem'), debug=True)
     except (KeyboardInterrupt, SystemExit):
         scheduler.shutdown()
