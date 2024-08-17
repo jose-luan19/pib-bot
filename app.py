@@ -1,5 +1,6 @@
-import json
 import os
+import webbrowser
+import pkg_resources
 import pytz
 import google.auth.transport.requests
 from datetime import datetime, timedelta
@@ -9,6 +10,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from google_auth_oauthlib.flow import Flow
 from flask import Flask, render_template, session, redirect, url_for, request
 import atexit
+from threading import Timer
 
 # Configuração do Flask
 app = Flask(__name__)
@@ -43,67 +45,49 @@ client_config = {
     }
 }
 
-def save_credentials_to_file(creds, user_id):
-    # Define o caminho onde as credenciais serão armazenadas
-    creds_file = f'creds_{user_id}.json'
-    with open(creds_file, 'w') as f:
-        json.dump(creds_to_dict(creds), f)
-
-def load_credentials_from_file(user_id):
+def load_credentials_from_session():
     # Define o caminho do arquivo de credenciais
-    creds_file = f'creds_{user_id}.json'
-    try:
-        with open(creds_file, 'r') as f:
-            creds_data = json.load(f)
-            expiry = datetime.fromisoformat(creds_data['expiry']) if creds_data.get('expiry') else None
-            creds = Credentials(
-                token=creds_data.get('token'),
-                refresh_token=creds_data.get('refresh_token'),
-                token_uri= client_config['web']['token_uri'],
-                client_id=client_config['web']['client_id'],
-                client_secret=client_config['web']['client_secret'],
-                scopes=SCOPES,
-                expiry=expiry
-            )
-            return creds
-    except FileNotFoundError:
-        return None
+    if 'credentials' in session:
+        
+        creds_data = session['credentials']
+        expiry = datetime.fromisoformat(creds_data['expiry']) if creds_data.get('expiry') else None
+        creds = Credentials(
+            token=creds_data.get('token'),
+            refresh_token=creds_data.get('refresh_token'),
+            token_uri= client_config['web']['token_uri'],
+            client_id=client_config['web']['client_id'],
+            client_secret=client_config['web']['client_secret'],
+            scopes=SCOPES,
+            expiry=expiry
+        )
+        return creds
+            
+    return None
 
 # Para garantir que o scheduler seja desligado corretamente ao encerrar a aplicação
 atexit.register(lambda: scheduler.shutdown())
 
 def get_credentials():
-    if 'user_id' in session:
-        user_id = session['user_id']
-        creds = load_credentials_from_file(user_id)
-        print(creds_to_dict(creds))
-        print(creds.client_secret)
-        print(creds.client_id)
-        print(creds.token_uri)
-        print(creds.refresh_token)
-        print(creds.token)
-        
-        if not creds:
-            print('Could not load credentials from file')
+    creds = load_credentials_from_session()
+    
+    if not creds:
+        print('Could not load credentials from session')
+        return None
+
+    if not (creds.refresh_token and creds.token_uri and creds.client_id and creds.client_secret):
+        print('Missing necessary fields in credentials')
+        return None
+
+    # Refresh the token if it has expired
+    if creds.expired and creds.refresh_token:
+        try:
+            creds.refresh(google.auth.transport.requests.Request())
+            session['credentials'] = creds_to_dict(creds)
+        except Exception as e:
+            print(f'Error refreshing credentials: {e}')
             return None
 
-        # if not (creds.refresh_token and creds.token_uri and creds.client_id and creds.client_secret):
-        #     print('Missing necessary fields in credentials')
-        #     return None
-
-        # Refresh the token if it has expired
-        # if creds.expired and creds.refresh_token:
-        if creds.expired:
-            # try:
-            #     # creds.refresh(google.auth.transport.requests.Request())
-            #     # save_credentials_to_file(creds, user_id)  # Salva as credenciais atualizadas
-            #     return None
-            # except Exception as e:
-            #     print(f'Error refreshing credentials: {e}')
-            return None
-
-        return creds
-    return None
+    return creds
 
 def authenticate():
     global youtube
@@ -216,8 +200,8 @@ def try_connecting():
     tentativas += 1
     main()
 
-    # Se passar de 6 tentativas (30 minutos), parar o scheduler
-    if tentativas >= 6:
+    # Se passar de 6 tentativas (40 minutos), parar o scheduler
+    if tentativas >= 8:
         # Redirecionar para a página de resultado com falha
         return redirect_to_result('failed')
 
@@ -269,12 +253,8 @@ def callback():
     flow.fetch_token(authorization_response=authorization_response)
 
     credentials = flow.credentials
-    print(creds_to_dict(credentials))
-    user_id = 'pib_bot_chat'  # Substitua pelo ID real do usuário ou um identificador único
-    save_credentials_to_file(credentials, user_id)
 
-    # Armazena o user_id na sessão para uso futuro
-    session['user_id'] = user_id
+    session['credentials'] = creds_to_dict(credentials)
 
     return redirect(url_for('waiting'))
 
@@ -300,9 +280,27 @@ def result():
     status = session.get('status')
     return render_template('result.html', status=status)
 
+# Função para obter o caminho do arquivo dentro do pacote
+def get_static_file_path(filename):
+    return pkg_resources.resource_filename(__name__, f'static/{filename}')
+
+def open_browser():
+    url = 'https://127.0.0.1:5000'
+    # Abrir o navegador padrão com a URL
+    webbrowser.open(url, new=2)
+
+def run_flask():
+    ssl_cert_path = get_static_file_path('localhost.pem')
+    ssl_key_path = get_static_file_path('localhost-key.pem')
+    app.run(host='0.0.0.0', 
+            port=int(os.getenv('PORT', 5000)), 
+            ssl_context=(ssl_cert_path,ssl_key_path), 
+            debug=False)
+
 if __name__ == "__main__":
     try:
-        app.run()
-        # app.run(host='0.0.0.0', port=int(os.getenv('PORT', 5000)), ssl_context=('localhost.pem', 'localhost-key.pem'), debug=True)
+        timer = Timer(3, open_browser)  # Wait for 1 second before opening the browser
+        timer.start()
+        run_flask()
     except (KeyboardInterrupt, SystemExit):
         scheduler.shutdown()
