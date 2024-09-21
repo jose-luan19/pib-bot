@@ -1,6 +1,5 @@
 import os
 import webbrowser
-import pkg_resources
 import pytz
 import google.auth.transport.requests
 from datetime import datetime, timedelta
@@ -30,7 +29,7 @@ scheduler.start()
 
 # Defina os escopos necessários CLIENT_SECRET
 SCOPES = ["https://www.googleapis.com/auth/youtube.force-ssl"]
-REDIRECT_URI = os.getenv('DOMAIN', 'https://127.0.0.1:5000') + '/callback'
+REDIRECT_URI = os.getenv('DOMAIN', 'https://127.0.0.1:443') + '/callback'
 # print('REDIRECT_URI:'+ REDIRECT_URI)
 
 client_config = {
@@ -174,7 +173,7 @@ def main():
         sheduler_jobs(method=send_message_about_instagram_and_tiktok, time_minute=1, live_chat_id=live_chat_id)
 
         # Agendar a tarefa para executar em 70 minutos
-        sheduler_jobs(method=send_message_about_instagram_and_tiktok, time_minute=65, live_chat_id=live_chat_id)
+        sheduler_jobs(method=send_message_about_instagram_and_tiktok, time_minute=70, live_chat_id=live_chat_id)
         ending_bot = True
     
 def sheduler_jobs(method, time_minute, live_chat_id):
@@ -247,7 +246,7 @@ def callback():
     flow.redirect_uri = REDIRECT_URI
 
     # authorization_response = request.url
-    authorization_response = os.getenv('DOMAIN', 'https://127.0.0.1:5000')  + request.full_path
+    authorization_response = os.getenv('DOMAIN', 'https://127.0.0.1:443')  + request.full_path
     # print('authorization_response:'+ authorization_response)
     
     flow.fetch_token(authorization_response=authorization_response)
@@ -281,21 +280,26 @@ def result():
     return render_template('result.html', status=status)
 
 # Função para obter o caminho do arquivo dentro do pacote
-def get_static_file_path(filename):
-    return pkg_resources.resource_filename(__name__, f'static/{filename}')
+# def get_static_file_path(filename):
+#     return pkg_resources.resource_filename(__name__, f'static/{filename}')
 
 def open_browser():
-    url = 'https://127.0.0.1:5000'
+    url = 'https://127.0.0.1:443'
     # Abrir o navegador padrão com a URL
     webbrowser.open(url, new=2)
 
 def run_flask():
-    ssl_cert_path = get_static_file_path('localhost.pem')
-    ssl_key_path = get_static_file_path('localhost-key.pem')
+    # ssl_cert_path = get_static_file_path('certificado_ssl.pem')
+    # ssl_key_path = get_static_file_path('chave_privada.pem')
+    # ssl_cert_path = 'static/certificado_ssl.pem'
+    # ssl_key_path = 'static/chave_privada.pem'
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    ssl_cert_path = os.path.join(base_dir, 'static', 'certificado_ssl.pem')
+    ssl_key_path = os.path.join(base_dir, 'static', 'chave_privada.pem')
+    
     app.run(host='0.0.0.0', 
-            port=int(os.getenv('PORT', 5000)), 
-            ssl_context=(ssl_cert_path,ssl_key_path), 
-            debug=False)
+            port=443, 
+            ssl_context=(ssl_cert_path,ssl_key_path))
 
 if __name__ == "__main__":
     try:
