@@ -7,9 +7,14 @@ from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
 from apscheduler.schedulers.background import BackgroundScheduler
 from google_auth_oauthlib.flow import Flow
-from flask import Flask, render_template, session, redirect, url_for, request
+from flask import Flask, render_template, session, redirect, url_for, request, current_app
 import atexit
 from threading import Timer
+
+
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 # Configuração do Flask
 app = Flask(__name__)
@@ -84,6 +89,8 @@ def get_credentials():
             session['credentials'] = creds_to_dict(creds)
         except Exception as e:
             print(f'Error refreshing credentials: {e}')
+            logging.error("Error refreshing credentials", exc_info=True)
+
             return None
 
     return creds
@@ -114,9 +121,18 @@ def get_live_broadcast():
     except Exception as ex:
         print("PROBLEMA AO RESGATAR STREAM")
         print(ex)
+        logging.error("PROBLEMA AO RESGATAR STREAM", exc_info=True)
 
-def send_message(live_chat_id, message):
+        
+        
+def get_live_chat_ID():
+    broadcast = get_live_broadcast()
+    live_chat_id = broadcast["snippet"]["liveChatId"]
+    return live_chat_id
+
+def send_message(message):
     try:
+        live_chat_id = get_live_chat_ID()
         request = youtube.liveChatMessages().insert(
         part="snippet",
         body={
@@ -133,57 +149,76 @@ def send_message(live_chat_id, message):
     except Exception as ex:
         print("PROBLEMA AO ENVIAR MENSAGEM PARA YOUTBE")
         print(ex)
+        logging.error("PROBLEMA AO ENVIAR MENSAGEM PARA YOUTBE", exc_info=True)
+        
 
 BOAS_VINDAS_DIA = "Bom Dia, sejam bem vindos."
 BOAS_VINDAS_TARDE = "Boa Tarde, sejam bem vindos."
 BOAS_VINDAS_NOITE = "Boa Noite, sejam bem vindos."
+
 DIVULGACAO_INSTAGRAM = "Acompanhe as atividades e programações da igreja no nosso Instagram - https://www.instagram.com/pibplanaltocaucaia "
 DIVULGACAO_TIKTOK = "E nos acompanhe no TikTok - https://www.tiktok.com/@pibplanaltocaucaia"
 
-def send_message_about_instagram_and_tiktok(live_chat_id):
-    send_message(live_chat_id, DIVULGACAO_INSTAGRAM)
-    send_message(live_chat_id, DIVULGACAO_TIKTOK)
+PEDIDOS_DE_ORACAO = "Mande seu pedido de oração aqui no chat ou nosso perfil do Instagram - https://www.instagram.com/pibplanaltocaucaia e iremos orar por eles."
+DIZIMOS_OFERTAS = "Para dízimos e ofertas a chave pix é: 26937082000199 (CNPJ)."
+PERGUNTAS = "Mande sua pergunta e nós levaremos ao palestrante."
+
+def send_message_about_instagram_and_tiktok():
+    send_message(DIVULGACAO_INSTAGRAM)
+    send_message(DIVULGACAO_TIKTOK)
     print('ENVIOU DIVULGACAO')
     
 
-def welcome_message(live_chat_id):
+def welcome_message():
     now = datetime.now(CEARA_TZ)
     hour_actual = now.hour
     dias_da_semana = ["PROGRAMACAO DE SEGUNDA", "PROGRAMACAO DE TERCA", "CULTO DE QUARTA", "PROGRAMACAO DE QUINTA", "PROGRAMACAO DE SEXTA", "PROGRAMACAO DE SABADO", "CULTO DE DOMINGO"]
     print(dias_da_semana[now.weekday()], end=" ")
     if 6 <= hour_actual < 12:
         print("MANHÃ")
-        send_message(live_chat_id, BOAS_VINDAS_DIA)
+        # send_message(live_chat_id, BOAS_VINDAS_DIA)
+        send_message(BOAS_VINDAS_DIA)
     elif 12 <= hour_actual < 18:
         print("TARDE")
-        send_message(live_chat_id, BOAS_VINDAS_TARDE)
+        # send_message(live_chat_id, BOAS_VINDAS_TARDE)
+        send_message(BOAS_VINDAS_TARDE)
     else:
         print("NOITE")
-        send_message(live_chat_id, BOAS_VINDAS_NOITE)
+        # send_message(live_chat_id, BOAS_VINDAS_NOITE)
+        send_message(BOAS_VINDAS_NOITE)
     print('ENVIOU BOAS VINDAS')
 
 def main():
-    broadcast = get_live_broadcast()
-    if broadcast:
-        global ending_bot
-        live_chat_id = broadcast["snippet"]["liveChatId"]
-        welcome_message(live_chat_id)
+    try:
+        broadcast = get_live_broadcast()
+        if broadcast:
+            global ending_bot
 
-        # Agendar a tarefa para executar em 5 minutos
-        sheduler_jobs(method=send_message_about_instagram_and_tiktok, time_minute=1, live_chat_id=live_chat_id)
+            welcome_message()
 
-        # Agendar a tarefa para executar em 70 minutos
-        sheduler_jobs(method=send_message_about_instagram_and_tiktok, time_minute=70, live_chat_id=live_chat_id)
-        ending_bot = True
+            # Agendar a tarefa para executar em 5 minutos
+            sheduler_jobs(method=send_message_about_instagram_and_tiktok, time_minute=1)
+
+            # Agendar a tarefa para executar em 70 minutos
+            sheduler_jobs(method=send_message_about_instagram_and_tiktok, time_minute=70)
+            ending_bot = True
+            
+    except Exception as ex:
+        logging.error("Erro no main: ", exc_info=True)
+
     
-def sheduler_jobs(method, time_minute, live_chat_id):
+def sheduler_jobs(method, time_minute):
     global scheduler
     scheduler.add_job(
+        # lambda: execute_in_context(method),
         method,
         trigger='date',
-        run_date=datetime.now(CEARA_TZ) + timedelta(minutes=time_minute),
-        args=[live_chat_id]
+        run_date=datetime.now(CEARA_TZ) + timedelta(minutes=time_minute)
     )
+    
+# def execute_in_context(method):
+#     with current_app.app_context():
+#         method()
     
 
 def creds_to_dict(creds):
@@ -199,8 +234,8 @@ def try_connecting():
     tentativas += 1
     main()
 
-    # Se passar de 6 tentativas (40 minutos), parar o scheduler
-    if tentativas >= 8:
+    # Se passar de 40 tentativas (40 minutos), parar o scheduler
+    if tentativas >= 40:
         # Redirecionar para a página de resultado com falha
         return redirect_to_result('failed')
 
@@ -279,9 +314,21 @@ def result():
     status = session.get('status')
     return render_template('result.html', status=status)
 
-# Função para obter o caminho do arquivo dentro do pacote
-# def get_static_file_path(filename):
-#     return pkg_resources.resource_filename(__name__, f'static/{filename}')
+@app.route('/enviar_oferta', methods=['POST'])
+def enviar_oferta():
+    # Lógica para enviar mensagem de ofertas
+    send_message(DIZIMOS_OFERTAS)
+    return f'MENSAGEM DE DIZIMOS E OFERTAS ENVIADA', 201
+
+@app.route('/enviar_pergunta', methods=['POST'])
+def enviar_pergunta():
+    send_message(PERGUNTAS)
+    return f'MENSAGEM DE PERGUNTAS ENVIADA', 201
+
+@app.route('/enviar_pedido_oracao', methods=['POST'])
+def enviar_pedido_oracao():
+    send_message(PEDIDOS_DE_ORACAO)
+    return f'MENSAGEM DE PEDIDOS DE ORAÇÃO ENVIADA', 201
 
 def open_browser():
     url = 'https://127.0.0.1:443'

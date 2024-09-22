@@ -5,25 +5,42 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Esperando Live</title>
     <script>
-      function checkStatus() {
-          fetch('/check_status')
-            .then(response => {
-                if (response.redirected) {
-                    window.location.href = response.url;
-                }
-              })
-            .catch(error => console.error('Erro ao verificar status:', error));
-      }
+        let timeRemaining = 60; // Segundos para a próxima tentativa
+        let attempts = 1; // Contador de tentativas
 
-      setInterval(checkStatus, 300000); // Verifica a cada 60 segundos
-  </script>
+        function updateTimer() {
+            document.getElementById('timer').innerText = timeRemaining;
+            timeRemaining--;
+
+            if (timeRemaining < 0) {
+                timeRemaining = 60; // Reseta o timer para 60 segundos após a verificação
+            }
+        }
+
+        function checkStatus() {
+            fetch('/check_status')
+                .then(response => {
+                    if (response.redirected) {
+                        window.location.href = response.url;
+                    }
+                    else {
+                        attempts++; // Incrementa o contador de tentativas
+                        document.getElementById('attempts').innerText = `${attempts}ª tentativa de 40`;
+                    }
+                })
+                .catch(error => console.error('Erro ao verificar status:', error));
+        }
+
+        setInterval(updateTimer, 1000); // Atualiza o timer a cada segundo
+        setInterval(checkStatus, 61000); // Verifica a cada 60 segundos
+    </script>
     <style>
         body {
             font-family: Arial, sans-serif;
             text-align: center;
             margin-top: 50px;
         }
-        .warning{
+        .warning {
             font-size: 16px;
             color: #eb0808;
             margin-bottom: 50px;
@@ -42,10 +59,13 @@
             animation: spin 2s linear infinite;
             margin: 0 auto;
         }
-
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+        }
+        #timer {
+            text-decoration: underline; 
+            color: rgb(96, 72, 231);
         }
     </style>
 </head>
@@ -55,5 +75,10 @@
     </div>
     <p class="warning">NÃO FECHE ESSA ABA</p>
     <div class="spinner"></div>
+
+    <div style="margin-top: 70px;">
+        <h2 id="attempts">1ª tentativa de 40</h2>
+        <h2>Próxima tentativa em <span id="timer">60</span> segundos</h2>
+    </div>
 </body>
 </html>
