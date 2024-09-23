@@ -127,12 +127,14 @@ def get_live_broadcast():
         
 def get_live_chat_ID():
     broadcast = get_live_broadcast()
-    live_chat_id = broadcast["snippet"]["liveChatId"]
-    return live_chat_id
+    if broadcast is None:
+        return None
+    return broadcast["snippet"]["liveChatId"]
 
-def send_message(message):
+def send_message(message, live_chat_id=None):
     try:
-        live_chat_id = get_live_chat_ID()
+        if live_chat_id is None:
+            live_chat_id = get_live_chat_ID()
         request = youtube.liveChatMessages().insert(
         part="snippet",
         body={
@@ -163,9 +165,9 @@ PEDIDOS_DE_ORACAO = "Mande seu pedido de oração aqui no chat ou nosso perfil d
 DIZIMOS_OFERTAS = "Para dízimos e ofertas a chave pix é: 26937082000199 (CNPJ)."
 PERGUNTAS = "Mande sua pergunta e nós levaremos ao palestrante."
 
-def send_message_about_instagram_and_tiktok():
-    send_message(DIVULGACAO_INSTAGRAM)
-    send_message(DIVULGACAO_TIKTOK)
+def send_message_about_instagram_and_tiktok(live_chat_id):
+    send_message(DIVULGACAO_INSTAGRAM, live_chat_id)
+    send_message(DIVULGACAO_TIKTOK, live_chat_id)
     print('ENVIOU DIVULGACAO')
     
 
@@ -190,30 +192,31 @@ def welcome_message():
 
 def main():
     try:
-        broadcast = get_live_broadcast()
-        if broadcast:
+        live_chat_id = get_live_chat_ID()
+        if live_chat_id:
             global ending_bot
 
             welcome_message()
 
             # Agendar a tarefa para executar em 5 minutos
-            sheduler_jobs(method=send_message_about_instagram_and_tiktok, time_minute=1)
+            sheduler_jobs(method=send_message_about_instagram_and_tiktok, time_minute=1, live_chat_id=live_chat_id)
 
             # Agendar a tarefa para executar em 70 minutos
-            sheduler_jobs(method=send_message_about_instagram_and_tiktok, time_minute=70)
+            sheduler_jobs(method=send_message_about_instagram_and_tiktok, time_minute=70, live_chat_id=live_chat_id)
             ending_bot = True
             
     except Exception as ex:
         logging.error("Erro no main: ", exc_info=True)
 
     
-def sheduler_jobs(method, time_minute):
+def sheduler_jobs(method, time_minute, live_chat_id):
     global scheduler
     scheduler.add_job(
         # lambda: execute_in_context(method),
         method,
         trigger='date',
-        run_date=datetime.now(CEARA_TZ) + timedelta(minutes=time_minute)
+        run_date=datetime.now(CEARA_TZ) + timedelta(minutes=time_minute),
+        args=[live_chat_id]
     )
     
 # def execute_in_context(method):
@@ -226,7 +229,6 @@ def creds_to_dict(creds):
         'token': creds.token,
         'refresh_token': creds.refresh_token,
         'expiry': creds.expiry.isoformat() if creds.expiry else None
-        
     }
     
 def try_connecting():

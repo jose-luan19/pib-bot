@@ -7,11 +7,11 @@
     <style>
         .success {
             color: green;
-            font-size: 24px;
+            font-size: 40px;
         }
         .failed {
             color: red;
-            font-size: 24px;
+            font-size: 40px;
         }
         .spinner {
             border: 16px solid #f3f3f3; /* Light grey */
@@ -39,21 +39,28 @@
     <div class="text-center mt-5">
         {% if status == 'success' %}
         <div class="success">MENSAGENS PROGRAMADAS CHEFIA</div>
+        <div id="buttons" class="mt-5">
+            <button id="oferta" onclick="enviarMensagem('/enviar_oferta')" class="btn btn-outline-dark btn-lg btn-block">Enviar Mensagem de dizimos e ofertas</button>
+            <button id="pergunta" onclick="enviarMensagem('/enviar_pergunta')" class="btn btn-outline-primary btn-lg btn-block">Enviar Mensagem de pergunta</button>
+            <button id="oracao" onclick="enviarMensagem('/enviar_pedido_oracao')" class="btn btn-outline-info btn-lg btn-block">Enviar Mensagem de pedidos de oração</button>
+        </div>
+    
+        <div id="space-spinner" class="mt-4"></div>
         {% else %}
             <div class="failed">BOT encerrado após 40 minutos de tentativas de ativação.</div>
         {% endif %}
     </div>
     
-    <div class="mt-5">
-        <button onclick="enviarMensagem('/enviar_oferta')" class="btn btn-outline-dark btn-lg btn-block">Enviar Mensagem de dizimos e ofertas</button>
-        <button onclick="enviarMensagem('/enviar_pergunta')" class="btn btn-outline-primary btn-lg btn-block">Enviar Mensagem de pergunta</button>
-        <button onclick="enviarMensagem('/enviar_pedido_oracao')" class="btn btn-outline-info btn-lg btn-block">Enviar Mensagem de pedidos de oração</button>
-    </div>
-
-    <div id="space-spinner" class="mt-4"></div>
 
 <script>
+    function toggleButtons(state) {
+        // Habilita ou desabilita os botões conforme o estado passado (true = habilitar, false = desabilitar)
+        document.getElementById('oferta').disabled = !state;
+        document.getElementById('pergunta').disabled = !state;
+        document.getElementById('oracao').disabled = !state;
+    }
      function enviarMensagem(url) {
+        toggleButtons(false);
         let spinner = document.createElement('div');
         spinner.className = 'spinner';
         let spaceSpinner = document.getElementById("space-spinner").appendChild(spinner)
@@ -64,7 +71,7 @@
             if (!response.ok) {
                 throw new Error('Erro na requisição');
             }
-            return response.text(); // ou response.json() se retornar um JSON
+            return response.text(); 
         })
          .then(data => {
             spinner.remove();
@@ -76,7 +83,7 @@
                 duration: 5000,
                 close: true,
                 style: {
-                    background: "linear-gradient(to right, #ff5f6d, #ffc371)",
+                    background: "linear-gradient(to right, #0FB070, #065BA5)",
                 }
             }).showToast();
          })
@@ -89,9 +96,12 @@
                 duration: 5000,
                 close: true,
                 style: {
-                    background: "linear-gradient(to right, #ff5f6d, #ffc371)",
+                    background: "linear-gradient(to right, #F71616, #A12626)",
                 }
             }).showToast();
+         })
+         .finally(()=>{
+            toggleButtons(true);
          });
      }
  </script>
