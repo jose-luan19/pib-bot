@@ -43,7 +43,7 @@
    'C:\\Users\\luan_costa\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks\\pyi_rth_pkgres.py',
    'PYSOURCE'),
   ('app',
-   'C:\\Users\\luan_costa\\Documents\\CODES\\PIBbot\\app.py',
+   'C:\\Users\\luan_costa\\Documents\\CODES\\PIBbot\\app\\app.py',
    'PYSOURCE')],
  'python312.dll',
  True,
