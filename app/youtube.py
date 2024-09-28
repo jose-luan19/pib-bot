@@ -217,3 +217,9 @@ def enviar_pergunta():
 def enviar_pedido_oracao():
     send_message(PEDIDOS_DE_ORACAO)
     return "Mensagem de pedidos de oração enviada", 201
+
+def get_link_stream():
+    broadcast = get_live_broadcast()
+    broadcast_id = broadcast["id"]
+    live_link = f"https://www.youtube.com/live/{broadcast_id}?feature=share" 
+    return live_link

@@ -8,6 +8,10 @@ a = Analysis(
     datas=[
         ('app/static/certificado_ssl.pem', 'static'),
         ('app/static/chave_privada.pem', 'static'),
+        ('app/static/oferta.jpg', 'static'),
+        ('app/static/script.js', 'static'),
+        ('app/static/style.css', 'static'),
+        ('app/chromedriver', 'chromedriver'),
         ('app/templates/result.html', 'templates'),
         ('app/templates/waiting.html', 'templates')
     ],

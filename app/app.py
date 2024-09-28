@@ -20,9 +20,6 @@ def run_flask():
     base_dir = os.path.dirname(os.path.abspath(__file__))
     ssl_cert_path = os.path.join(base_dir, 'static', 'certificado_ssl.pem')
     ssl_key_path = os.path.join(base_dir, 'static', 'chave_privada.pem')
-    print(base_dir)
-    print(ssl_key_path)
-    print(ssl_cert_path)
     
     app.run(host='0.0.0.0', port=443, ssl_context=(ssl_cert_path, ssl_key_path))
 
