@@ -39,11 +39,11 @@ def open_whatsapp():
 
      # Esperar até o QR code ser escaneado e a página carregar completamente
      print("Escaneie o QR Code no WhatsApp Web.")
-     time.sleep(10)
+     time.sleep(15)
      print("Login realizado com sucesso!")
 
      # Buscar o grupo pelo nome
-     grupo = "Arquivos"
+     grupo = "PIB Planalto Caucaia"
      search_box = driver.find_element(By.XPATH, '//div[@contenteditable="true"][@data-tab="3"]')
      search_box.click()
      search_box.send_keys(grupo)
