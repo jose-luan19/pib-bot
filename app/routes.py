@@ -1,4 +1,5 @@
-from flask import jsonify, request, session, render_template
+import os
+from flask import jsonify, request, send_from_directory, session, render_template
 from youtube import authorize, callback, try_connecting, enviar_oferta, enviar_pergunta, enviar_pedido_oracao, get_link_stream
 from whatsapp import envia_link_com_mensagem, enviar_mensagem_oferta
 
@@ -29,6 +30,10 @@ def setup_routes(app):
     def result():
         status = session.get('status')
         return render_template('result.html', status=status)
+    
+    @app.route('/favicon.ico')
+    def favicon():
+        return send_from_directory(os.path.join(app.root_path, 'static'), 'favicon.ico', mimetype='image/vnd.microsoft.icon')
 
     @app.route('/enviar_oferta', methods=['POST'])
     def enviar_oferta_route():

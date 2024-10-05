@@ -39,7 +39,7 @@ def open_whatsapp():
 
      # Esperar até o QR code ser escaneado e a página carregar completamente
      print("Escaneie o QR Code no WhatsApp Web.")
-     time.sleep(15)
+     time.sleep(20)
      print("Login realizado com sucesso!")
 
      # Buscar o grupo pelo nome
@@ -58,13 +58,14 @@ def envia_link_com_mensagem(link, mensagem):
      message_box = driver.find_element(By.XPATH, '//div[@contenteditable="true"][@data-tab="10"]')
      message_box.click()
      message_box.send_keys(link)
-     time.sleep(8)
+     time.sleep(20)
      message_box.send_keys(Keys.SHIFT, Keys.ENTER)
      message_box.send_keys(Keys.SHIFT, Keys.ENTER)
      message_box.send_keys(mensagem)
+     time.sleep(5)
      message_box.send_keys(Keys.RETURN)
      # Espera um tempo antes de fechar o navegador
-     time.sleep(1)
+     time.sleep(2)
 
      driver.quit()
 
