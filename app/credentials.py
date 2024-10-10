@@ -1,10 +1,12 @@
 import logging
-from flask import session
+import os
+from flask import redirect, session, url_for, request
 from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import Flow
 from google.auth.transport.requests import Request
 from datetime import datetime
 
-from config import client_config, SCOPES
+from config import client_config, SCOPES, REDIRECT_URI
 
 def load_credentials_from_session():
     # Define o caminho do arquivo de credenciais
@@ -66,3 +68,35 @@ def creds_to_dict(creds):
         "refresh_token": creds.refresh_token,
         "expiry": creds.expiry.isoformat() if creds.expiry else None,
       }
+    
+def authorize():
+    creds = get_credentials()
+    if creds and creds.valid:
+        return redirect(url_for("waiting"))
+
+    flow = Flow.from_client_config(client_config, SCOPES)
+    flow.redirect_uri = REDIRECT_URI
+    authorization_url, state = flow.authorization_url(
+        access_type="offline", include_granted_scopes="true"
+    )
+    session["state"] = state
+
+    return redirect(authorization_url)
+
+
+def callback():
+    if "state" not in session:
+        return "State missing in session, please try again.", 400
+
+    flow = Flow.from_client_config(client_config, SCOPES, state=session["state"])
+    flow.redirect_uri = REDIRECT_URI
+
+    authorization_response = (
+        os.getenv("DOMAIN", "https://127.0.0.1:443") + request.full_path
+    )
+    flow.fetch_token(authorization_response=authorization_response)
+
+    credentials = flow.credentials
+    session["credentials"] = creds_to_dict(credentials)
+
+    return redirect(url_for("waiting"))

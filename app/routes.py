@@ -1,7 +1,8 @@
 import os
 from flask import jsonify, request, send_from_directory, session, render_template
-from youtube import authorize, callback, try_connecting, enviar_oferta, enviar_pergunta, enviar_pedido_oracao, get_link_stream
+from youtube import try_connecting, enviar_oferta, enviar_pergunta, enviar_pedido_oracao, get_link_stream
 from whatsapp import envia_link_com_mensagem, enviar_mensagem_oferta
+from credentials import authorize, callback
 
 def setup_routes(app):
     @app.route('/')

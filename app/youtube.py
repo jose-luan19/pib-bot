@@ -2,9 +2,8 @@ from datetime import datetime, timedelta
 import logging
 import os
 from googleapiclient.discovery import build
-from google_auth_oauthlib.flow import Flow
-from flask import request, session, redirect, url_for
-from credentials import creds_to_dict, get_credentials
+from flask import session, redirect, url_for
+from credentials import get_credentials
 from messages import (
     BOAS_VINDAS_DIA,
     BOAS_VINDAS_NOITE,
@@ -15,7 +14,7 @@ from messages import (
     PEDIDOS_DE_ORACAO,
     PERGUNTAS,
 )
-from config import client_config, SCOPES, REDIRECT_URI, tentativas, CEARA_TZ, scheduler
+from config import tentativas, CEARA_TZ, scheduler
 
 
 def authenticate():
@@ -44,39 +43,6 @@ def get_live_broadcast():
         print("PROBLEMA AO RESGATAR STREAM")
         print(ex)
         logging.error("PROBLEMA AO RESGATAR STREAM", exc_info=True)
-
-
-def authorize():
-    creds = get_credentials()
-    if creds and creds.valid:
-        return redirect(url_for("waiting"))
-
-    flow = Flow.from_client_config(client_config, SCOPES)
-    flow.redirect_uri = REDIRECT_URI
-    authorization_url, state = flow.authorization_url(
-        access_type="offline", include_granted_scopes="true"
-    )
-    session["state"] = state
-
-    return redirect(authorization_url)
-
-
-def callback():
-    if "state" not in session:
-        return "State missing in session, please try again.", 400
-
-    flow = Flow.from_client_config(client_config, SCOPES, state=session["state"])
-    flow.redirect_uri = REDIRECT_URI
-
-    authorization_response = (
-        os.getenv("DOMAIN", "https://127.0.0.1:443") + request.full_path
-    )
-    flow.fetch_token(authorization_response=authorization_response)
-
-    credentials = flow.credentials
-    session["credentials"] = creds_to_dict(credentials)
-
-    return redirect(url_for("waiting"))
 
 
 def try_connecting():
