@@ -1,1 +1,5 @@
 credentials.json
+client_secret_web.json
+localhost-key.pem
+localhost.pem
+creds_pib_bot_chat.json
