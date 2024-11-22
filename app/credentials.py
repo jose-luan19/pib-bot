@@ -11,13 +11,8 @@ from config import client_config, SCOPES, REDIRECT_URI
 def load_credentials_from_session():
     # Define o caminho do arquivo de credenciais
     if "credentials" in session:
-
         creds_data = session["credentials"]
-        expiry = (
-            datetime.fromisoformat(creds_data["expiry"])
-            if creds_data.get("expiry")
-            else None
-        )
+        expiry = ( datetime.fromisoformat(creds_data["expiry"]) if creds_data.get("expiry") else None )
         creds = Credentials(
             token=creds_data.get("token"),
             refresh_token=creds_data.get("refresh_token"),
@@ -39,14 +34,9 @@ def get_credentials():
         print("Could not load credentials from session")
         return None
 
-    if not (
-        creds.refresh_token
-        and creds.token_uri
-        and creds.client_id
-        and creds.client_secret
-    ):
-        print("Missing necessary fields in credentials")
-        return None
+    if not (creds.refresh_token and creds.token_uri and creds.client_id and creds.client_secret):
+            print("Missing necessary fields in credentials")
+            return None
 
     # Refresh the token if it has expired
     if creds.expired and creds.refresh_token:
@@ -77,7 +67,7 @@ def authorize():
     flow = Flow.from_client_config(client_config, SCOPES)
     flow.redirect_uri = REDIRECT_URI
     authorization_url, state = flow.authorization_url(
-        access_type="offline", include_granted_scopes="true"
+        access_type="offline", include_granted_scopes="true",  prompt="consent"
     )
     session["state"] = state
 
@@ -90,10 +80,7 @@ def callback():
 
     flow = Flow.from_client_config(client_config, SCOPES, state=session["state"])
     flow.redirect_uri = REDIRECT_URI
-
-    authorization_response = (
-        os.getenv("DOMAIN", "https://127.0.0.1:443") + request.full_path
-    )
+    authorization_response = request.url
     flow.fetch_token(authorization_response=authorization_response)
 
     credentials = flow.credentials

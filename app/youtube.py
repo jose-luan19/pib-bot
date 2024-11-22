@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta
 import logging
-import os
 from googleapiclient.discovery import build
 from flask import session, redirect, url_for
 from credentials import get_credentials
@@ -14,7 +13,7 @@ from messages import (
     PEDIDOS_DE_ORACAO,
     PERGUNTAS,
 )
-from config import tentativas, CEARA_TZ, scheduler
+from config import tentativas, CEARA_TZ, scheduler, youtube
 
 
 def authenticate():
@@ -28,6 +27,7 @@ def authenticate():
 
 
 def get_live_broadcast():
+    global youtube
     authenticate()
     try:
         request = youtube.liveBroadcasts().list(
