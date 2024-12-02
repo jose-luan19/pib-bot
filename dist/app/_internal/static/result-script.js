@@ -64,7 +64,7 @@ function enviarMensagem(url) {
 }
 
 function enviarMensagemWhatsapp(url) {
-      document.getElementById('whatsapp').disabled = true;
+      document.getElementById('button-addon2').disabled = true;
       let spinner = document.createElement('div');
       spinner.className = 'spinner';
       document.getElementById("space-spinner").appendChild(spinner);

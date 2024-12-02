@@ -44,6 +44,7 @@ def open_whatsapp():
 
      # Buscar o grupo pelo nome
      grupo = "PIB Planalto Caucaia"
+     # grupo = "Arquivos"
      search_box = driver.find_element(By.XPATH, '//div[@contenteditable="true"][@data-tab="3"]')
      search_box.click()
      search_box.send_keys(grupo)

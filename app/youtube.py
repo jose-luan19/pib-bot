@@ -105,6 +105,7 @@ def send_message_about_instagram_and_tiktok(live_chat_id):
 def welcome_message():
     now = datetime.now(CEARA_TZ)
     hour_actual = now.hour
+    minute_actual = now.minute
     dias_da_semana = [
         "PROGRAMACAO DE SEGUNDA",
         "PROGRAMACAO DE TERCA",
@@ -115,11 +116,11 @@ def welcome_message():
         "CULTO DE DOMINGO",
     ]
     print(dias_da_semana[now.weekday()], end=" ")
-    if 6 <= hour_actual < 12:
+    if (6 <= hour_actual < 12) or (hour_actual == 12 and minute_actual < 30):
         print("MANHÃ")
         # send_message(live_chat_id, BOAS_VINDAS_DIA)
         send_message(BOAS_VINDAS_DIA)
-    elif 12 <= hour_actual < 18:
+    elif (12 < hour_actual < 17) or (hour_actual == 17 and minute_actual <= 30):
         print("TARDE")
         # send_message(live_chat_id, BOAS_VINDAS_TARDE)
         send_message(BOAS_VINDAS_TARDE)
