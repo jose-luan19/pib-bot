@@ -110,6 +110,6 @@ function enviarMensagemWhatsapp(url) {
             })
             .finally(() => {
                   spinner.remove();
-                  document.getElementById('whatsapp').disabled = false;
+                  document.getElementById('button-addon2').disabled = false;
             });
 }
