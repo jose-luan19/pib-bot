@@ -59,7 +59,7 @@ def envia_link_com_mensagem(link, mensagem):
      message_box = driver.find_element(By.XPATH, '//div[@contenteditable="true"][@data-tab="10"]')
      message_box.click()
      message_box.send_keys(link)
-     time.sleep(20)
+     time.sleep(30)
      message_box.send_keys(Keys.SHIFT, Keys.ENTER)
      message_box.send_keys(Keys.SHIFT, Keys.ENTER)
      message_box.send_keys(mensagem)
